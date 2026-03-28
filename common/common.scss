@@ -1,47 +1,72 @@
+/* MAIN DASHBOARD */
 .mod-dashboard {
-  padding: 16px;
-  background: var(--secondary);
-  border-radius: 10px;
-  margin-bottom: 20px;
+  padding: 20px;
 }
 
+/* STACK ALL BOXES VERTICALLY */
 .mod-grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr 1fr;
-  gap: 16px;
-  margin-bottom: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px; /* space between boxes */
+  margin-bottom: 24px;
 }
 
+/* BIG CARD STYLE */
 .mod-section {
   background: var(--primary-low);
-  padding: 12px;
-  border-radius: 8px;
+  padding: 20px;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.05);
 }
 
+/* HEADINGS */
+.mod-section h3 {
+  margin-bottom: 12px;
+  font-size: 16px;
+}
+
+/* LIST */
 .mod-section ul {
   list-style: none;
   padding: 0;
-  max-height: 200px;
+  margin: 0;
+  max-height: 300px;
   overflow-y: auto;
 }
 
+/* LIST ITEMS */
+.mod-section li {
+  margin-bottom: 8px;
+  font-size: 14px;
+}
+
+/* REVIEW STATUS */
 .review-status {
-  margin-left: 8px;
+  margin-left: 10px;
   font-size: 12px;
   font-weight: 600;
 }
 
-.reviewed { color: #22c55e; }
-.unreviewed { color: #facc15; }
+.reviewed {
+  color: #22c55e;
+}
 
+.unreviewed {
+  color: #facc15;
+}
+
+/* FILTER INPUTS */
 .mod-filters input {
   width: 100%;
-  padding: 6px;
-  margin-bottom: 6px;
+  padding: 8px;
+  margin-bottom: 8px;
+  border-radius: 6px;
 }
 
 .mod-filters button {
   width: 100%;
-  margin-bottom: 8px;
+  padding: 8px;
+  margin-bottom: 10px;
   cursor: pointer;
+  border-radius: 6px;
 }
