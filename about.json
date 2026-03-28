@@ -1,0 +1,13 @@
+{
+  "name": "Moderator Dashboard",
+  "about_url": "https://example.com/mod-dashboard-info",
+  "license_url": "https://opensource.org/licenses/MIT",
+  "component": true,
+  "authors": "Your Name",
+  "theme_version": "1.0",
+  "minimum_discourse_version": "3.0.0",
+  "assets": {},
+  "color_schemes": {},
+  "modifiers": {},
+  "learn_more": "Adds a custom moderator dashboard on /review showing latest posts, review queue, and follow-up items."
+}
