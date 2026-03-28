@@ -36,3 +36,18 @@
 .mod-section a {
   text-decoration: none;
 }
+
+/* REVIEW STATUS TAGS */
+.review-status {
+  margin-left: 8px;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.review-status.reviewed {
+  color: #22c55e;
+}
+
+.review-status.unreviewed {
+  color: #facc15;
+}
