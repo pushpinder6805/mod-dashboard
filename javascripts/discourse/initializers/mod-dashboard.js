@@ -81,7 +81,7 @@ export default apiInitializer("0.11", (api) => {
   }
 
   // -----------------------
-  // Review Status (NEW LOGIC)
+  // Review Status (FIXED)
   // -----------------------
   async function loadReview(container) {
     const list = container.querySelector(".review");
@@ -90,10 +90,20 @@ export default apiInitializer("0.11", (api) => {
     if (!list || !countEl) return;
 
     try {
-      const res = await fetch("/latest.json");
-      const data = await res.json();
+      // ALL POSTS
+      const latestRes = await fetch("/latest.json");
+      const latestData = await latestRes.json();
+      const topics = latestData.topic_list?.topics || [];
 
-      const topics = data.topic_list?.topics || [];
+      // REVIEWED POSTS (FAST + CORRECT)
+      const reviewedRes = await fetch("/search.json?q=tags:reviewed");
+      const reviewedData = await reviewedRes.json();
+      const reviewedTopics = reviewedData.topics || [];
+
+      const reviewedIds = new Set(
+        reviewedTopics.map((t) => t.id)
+      );
+
       countEl.textContent = topics.length;
 
       if (!topics.length) {
@@ -102,7 +112,7 @@ export default apiInitializer("0.11", (api) => {
       }
 
       topics.forEach((t) => {
-        const isReviewed = t.tags?.includes("reviewed");
+        const isReviewed = reviewedIds.has(t.id);
 
         list.innerHTML += `
           <li>
