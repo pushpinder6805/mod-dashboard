@@ -48,43 +48,64 @@ export default apiInitializer("0.11", (api) => {
   // Latest Posts
   // -----------------------
   async function loadLatest(container) {
-    const res = await fetch("/latest.json");
-    const data = await res.json();
-
     const list = container.querySelector(".latest");
+    if (!list) return;
 
-    data.topic_list.topics.forEach((t) => {
-      list.innerHTML += `
-        <li>
-          <a href="/t/${t.slug}/${t.id}">
-            ${t.title}
-          </a>
-        </li>
-      `;
-    });
+    try {
+      const res = await fetch("/latest.json");
+      const data = await res.json();
+
+      const topics = data.topic_list?.topics || [];
+
+      if (!topics.length) {
+        list.innerHTML = "<li>No latest posts</li>";
+        return;
+      }
+
+      topics.forEach((t) => {
+        list.innerHTML += `
+          <li>
+            <a href="/t/${t.slug}/${t.id}">
+              ${t.title}
+            </a>
+          </li>
+        `;
+      });
+    } catch (e) {
+      console.error("Latest fetch failed", e);
+    }
   }
 
   // -----------------------
   // Review Queue
   // -----------------------
   async function loadReview(container) {
-    const res = await fetch("/review.json");
-    const data = await res.json();
-
     const list = container.querySelector(".review");
+    if (!list) return;
 
-    data.reviewables.forEach((r) => {
-      const topicId = r.topic_id || r.target_id;
+    try {
+      const res = await fetch("/review.json");
+      const data = await res.json();
 
-      list.innerHTML += `
-        <li>
-          <a href="/review">
-            ${r.type.replace("Reviewable", "")} 
-            (${r.status})
-          </a>
-        </li>
-      `;
-    });
+      const items = data.reviewables || [];
+
+      if (!items.length) {
+        list.innerHTML = "<li>No items in review queue</li>";
+        return;
+      }
+
+      items.forEach((r) => {
+        list.innerHTML += `
+          <li>
+            <a href="/review">
+              ${r.type.replace("Reviewable", "")} (${r.status})
+            </a>
+          </li>
+        `;
+      });
+    } catch (e) {
+      console.error("Review fetch failed", e);
+    }
   }
 
   // -----------------------
@@ -92,33 +113,48 @@ export default apiInitializer("0.11", (api) => {
   // -----------------------
   async function loadFollowUp(container) {
     const list = container.querySelector(".followup");
+    if (!list) return;
 
-    // 1. Tag-based
-    const tagRes = await fetch("/tags/follow-up.json");
-    const tagData = await tagRes.json();
+    try {
+      // ---------------- TAG BASED (FIXED USING SEARCH API)
+      const tagRes = await fetch("/search.json?q=tags:follow-up");
+      const tagData = await tagRes.json();
 
-    tagData.topic_list.topics.forEach((t) => {
-      list.innerHTML += `
-        <li>
-          <a href="/t/${t.slug}/${t.id}">
-            🏷 ${t.title}
-          </a>
-        </li>
-      `;
-    });
+      const tagTopics = tagData.topics || [];
 
-    // 2. Flag-based (from review queue)
-    const reviewRes = await fetch("/review.json?type=ReviewableFlaggedPost");
-    const reviewData = await reviewRes.json();
+      tagTopics.forEach((t) => {
+        list.innerHTML += `
+          <li>
+            <a href="/t/${t.slug}/${t.id}">
+              🏷 ${t.title}
+            </a>
+          </li>
+        `;
+      });
 
-    reviewData.reviewables.forEach((r) => {
-      list.innerHTML += `
-        <li>
-          <a href="/review">
-            🚩 Flagged Post (${r.status})
-          </a>
-        </li>
-      `;
-    });
+      // ---------------- FLAG BASED (FROM REVIEW QUEUE)
+      const reviewRes = await fetch(
+        "/review.json?type=ReviewableFlaggedPost"
+      );
+      const reviewData = await reviewRes.json();
+
+      const flagged = reviewData.reviewables || [];
+
+      flagged.forEach((r) => {
+        list.innerHTML += `
+          <li>
+            <a href="/review">
+              🚩 Flagged Post (${r.status})
+            </a>
+          </li>
+        `;
+      });
+
+      if (!tagTopics.length && !flagged.length) {
+        list.innerHTML = "<li>No follow-up items</li>";
+      }
+    } catch (e) {
+      console.error("Follow-up fetch failed", e);
+    }
   }
 });
