@@ -15,6 +15,7 @@ export default apiInitializer("0.11", (api) => {
     container.innerHTML = `
       <h2>Moderator Dashboard</h2>
 
+      <!-- TOP GRID -->
       <div class="mod-grid">
 
         <div class="mod-section">
@@ -33,6 +34,32 @@ export default apiInitializer("0.11", (api) => {
         </div>
 
       </div>
+
+      <!-- NEW FILTER GRID -->
+      <div class="mod-grid mod-filters">
+
+        <div class="mod-section">
+          <h3>Search by Username</h3>
+          <input class="filter-user-input" placeholder="Enter username" />
+          <button class="filter-user-btn">Search</button>
+          <ul class="filter-user-results"></ul>
+        </div>
+
+        <div class="mod-section">
+          <h3>Search by Tag</h3>
+          <input class="filter-tag-input" placeholder="Enter tag (e.g. follow-up)" />
+          <button class="filter-tag-btn">Search</button>
+          <ul class="filter-tag-results"></ul>
+        </div>
+
+        <div class="mod-section">
+          <h3>Search by Category</h3>
+          <input class="filter-cat-input" placeholder="Enter category slug" />
+          <button class="filter-cat-btn">Search</button>
+          <ul class="filter-cat-results"></ul>
+        </div>
+
+      </div>
     `;
 
     document.querySelector("#main-outlet")?.prepend(container);
@@ -42,6 +69,8 @@ export default apiInitializer("0.11", (api) => {
       loadReview(container),
       loadFollowUp(container),
     ]);
+
+    setupFilters(container);
   });
 
   // -----------------------
@@ -61,27 +90,23 @@ export default apiInitializer("0.11", (api) => {
       countEl.textContent =
         data.topic_list?.total_rows || topics.length;
 
-      if (!topics.length) {
-        list.innerHTML = "<li>No latest posts</li>";
-        return;
-      }
+      list.innerHTML = topics.length
+        ? topics.map(t => `
+            <li>
+              <a href="/t/${t.slug}/${t.id}">
+                ${t.title}
+              </a>
+            </li>
+          `).join("")
+        : "<li>No latest posts</li>";
 
-      topics.forEach((t) => {
-        list.innerHTML += `
-          <li>
-            <a href="/t/${t.slug}/${t.id}">
-              ${t.title}
-            </a>
-          </li>
-        `;
-      });
     } catch (e) {
-      console.error("Latest fetch failed", e);
+      console.error(e);
     }
   }
 
   // -----------------------
-  // Review Status (FIXED)
+  // Review Status
   // -----------------------
   async function loadReview(container) {
     const list = container.querySelector(".review");
@@ -90,51 +115,41 @@ export default apiInitializer("0.11", (api) => {
     if (!list || !countEl) return;
 
     try {
-      // ALL POSTS
       const latestRes = await fetch("/latest.json");
       const latestData = await latestRes.json();
       const topics = latestData.topic_list?.topics || [];
 
-      // REVIEWED POSTS (FAST + CORRECT)
       const reviewedRes = await fetch("/search.json?q=tags:reviewed");
       const reviewedData = await reviewedRes.json();
-      const reviewedTopics = reviewedData.topics || [];
-
       const reviewedIds = new Set(
-        reviewedTopics.map((t) => t.id)
+        (reviewedData.topics || []).map(t => t.id)
       );
 
       countEl.textContent = topics.length;
 
-      if (!topics.length) {
-        list.innerHTML = "<li>No posts found</li>";
-        return;
-      }
+      list.innerHTML = topics.length
+        ? topics.map(t => {
+            const isReviewed = reviewedIds.has(t.id);
+            return `
+              <li>
+                <a href="/t/${t.slug}/${t.id}">
+                  ${t.title}
+                </a>
+                <span class="review-status ${isReviewed ? "reviewed" : "unreviewed"}">
+                  ${isReviewed ? "Reviewed" : "Unreviewed"}
+                </span>
+              </li>
+            `;
+          }).join("")
+        : "<li>No posts found</li>";
 
-      topics.forEach((t) => {
-        const isReviewed = reviewedIds.has(t.id);
-
-        list.innerHTML += `
-          <li>
-            <a href="/t/${t.slug}/${t.id}">
-              ${t.title}
-            </a>
-
-            <span class="review-status ${
-              isReviewed ? "reviewed" : "unreviewed"
-            }">
-              ${isReviewed ? "Reviewed" : "Unreviewed"}
-            </span>
-          </li>
-        `;
-      });
     } catch (e) {
-      console.error("Review status fetch failed", e);
+      console.error(e);
     }
   }
 
   // -----------------------
-  // Follow-up (Tag + Flags)
+  // Follow-up
   // -----------------------
   async function loadFollowUp(container) {
     const list = container.querySelector(".followup");
@@ -143,53 +158,84 @@ export default apiInitializer("0.11", (api) => {
     if (!list || !countEl) return;
 
     try {
-      // TAG BASED
       const tagRes = await fetch("/search.json?q=tags:follow-up");
       const tagData = await tagRes.json();
-
       const tagTopics = tagData.topics || [];
-      const tagCount =
-        tagData.grouped_search_result?.total_count ||
-        tagTopics.length;
 
-      // FLAG BASED
-      const reviewRes = await fetch(
-        "/review.json?type=ReviewableFlaggedPost"
-      );
+      const reviewRes = await fetch("/review.json?type=ReviewableFlaggedPost");
       const reviewData = await reviewRes.json();
-
       const flagged = reviewData.reviewables || [];
-      const flagCount =
-        reviewData.meta?.total || flagged.length;
 
-      countEl.textContent = tagCount + flagCount;
+      countEl.textContent = tagTopics.length + flagged.length;
 
-      if (!tagTopics.length && !flagged.length) {
-        list.innerHTML = "<li>No follow-up items</li>";
-        return;
-      }
+      list.innerHTML = `
+        ${tagTopics.map(t => `
+          <li><a href="/t/${t.slug}/${t.id}">🏷 ${t.title}</a></li>
+        `).join("")}
 
-      tagTopics.forEach((t) => {
-        list.innerHTML += `
-          <li>
-            <a href="/t/${t.slug}/${t.id}">
-              🏷 ${t.title}
-            </a>
-          </li>
-        `;
-      });
+        ${flagged.map(() => `
+          <li><a href="/review">🚩 Flagged Post</a></li>
+        `).join("")}
+      ` || "<li>No follow-up items</li>";
 
-      flagged.forEach((r) => {
-        list.innerHTML += `
-          <li>
-            <a href="/review">
-              🚩 Flagged Post (${r.status})
-            </a>
-          </li>
-        `;
-      });
     } catch (e) {
-      console.error("Follow-up fetch failed", e);
+      console.error(e);
     }
+  }
+
+  // -----------------------
+  // Filters
+  // -----------------------
+  function setupFilters(container) {
+
+    // USER
+    container.querySelector(".filter-user-btn")?.addEventListener("click", async () => {
+      const val = container.querySelector(".filter-user-input").value.trim();
+      const list = container.querySelector(".filter-user-results");
+      if (!val || !list) return;
+
+      list.innerHTML = "Loading...";
+
+      const res = await fetch(`/search.json?q=%40${val}`);
+      const data = await res.json();
+
+      list.innerHTML = (data.topics || []).map(t =>
+        `<li><a href="/t/${t.slug}/${t.id}">${t.title}</a></li>`
+      ).join("") || "<li>No results</li>";
+    });
+
+    // TAG
+    container.querySelector(".filter-tag-btn")?.addEventListener("click", async () => {
+      const val = container.querySelector(".filter-tag-input").value.trim();
+      const list = container.querySelector(".filter-tag-results");
+      if (!val || !list) return;
+
+      list.innerHTML = "Loading...";
+
+      const res = await fetch(`/search.json?q=tags:${val}`);
+      const data = await res.json();
+
+      list.innerHTML = (data.topics || []).map(t =>
+        `<li><a href="/t/${t.slug}/${t.id}">${t.title}</a></li>`
+      ).join("") || "<li>No results</li>";
+    });
+
+    // CATEGORY
+    container.querySelector(".filter-cat-btn")?.addEventListener("click", async () => {
+      const val = container.querySelector(".filter-cat-input").value.trim();
+      const list = container.querySelector(".filter-cat-results");
+      if (!val || !list) return;
+
+      list.innerHTML = "Loading...";
+
+      const res = await fetch(`/c/${val}.json`);
+      const data = await res.json();
+
+      const topics = data.topic_list?.topics || [];
+
+      list.innerHTML = topics.map(t =>
+        `<li><a href="/t/${t.slug}/${t.id}">${t.title}</a></li>`
+      ).join("") || "<li>No results</li>";
+    });
   }
 });
