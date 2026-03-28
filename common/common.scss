@@ -9,6 +9,7 @@
   display: grid;
   grid-template-columns: 1fr 1fr 1fr;
   gap: 16px;
+  margin-bottom: 20px;
 }
 
 .mod-section {
@@ -17,37 +18,30 @@
   border-radius: 8px;
 }
 
-.mod-section h3 {
-  margin-bottom: 10px;
-  font-size: 15px;
-}
-
 .mod-section ul {
   list-style: none;
   padding: 0;
-  margin: 0;
+  max-height: 200px;
+  overflow-y: auto;
 }
 
-.mod-section li {
-  margin-bottom: 6px;
-  font-size: 13px;
-}
-
-.mod-section a {
-  text-decoration: none;
-}
-
-/* REVIEW STATUS TAGS */
 .review-status {
   margin-left: 8px;
   font-size: 12px;
   font-weight: 600;
 }
 
-.review-status.reviewed {
-  color: #22c55e;
+.reviewed { color: #22c55e; }
+.unreviewed { color: #facc15; }
+
+.mod-filters input {
+  width: 100%;
+  padding: 6px;
+  margin-bottom: 6px;
 }
 
-.review-status.unreviewed {
-  color: #facc15;
+.mod-filters button {
+  width: 100%;
+  margin-bottom: 8px;
+  cursor: pointer;
 }
