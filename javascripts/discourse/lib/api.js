@@ -17,3 +17,11 @@ export async function getFlags() {
 export async function searchUsers(term) {
   return fetch(`/u/search/users.json?term=${term}`).then(r => r.json());
 }
+
+export async function searchByTag(tag) {
+  return fetch(`/search.json?q=tags:${tag}`).then(r => r.json());
+}
+
+export async function getCategory(cat) {
+  return fetch(`/c/${cat}.json`).then(r => r.json());
+}
