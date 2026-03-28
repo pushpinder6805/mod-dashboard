@@ -23,7 +23,7 @@ export default apiInitializer("0.11", (api) => {
         </div>
 
         <div class="mod-section">
-          <h3>Unreviewed / Review Queue (<span class="count-review">0</span>)</h3>
+          <h3>Review Status (<span class="count-review">0</span>)</h3>
           <ul class="review"></ul>
         </div>
 
@@ -58,8 +58,6 @@ export default apiInitializer("0.11", (api) => {
       const data = await res.json();
 
       const topics = data.topic_list?.topics || [];
-
-      // Count (use total_rows if available)
       countEl.textContent =
         data.topic_list?.total_rows || topics.length;
 
@@ -83,7 +81,7 @@ export default apiInitializer("0.11", (api) => {
   }
 
   // -----------------------
-  // Review Queue
+  // Review Status (NEW LOGIC)
   // -----------------------
   async function loadReview(container) {
     const list = container.querySelector(".review");
@@ -92,31 +90,36 @@ export default apiInitializer("0.11", (api) => {
     if (!list || !countEl) return;
 
     try {
-      const res = await fetch("/review.json");
+      const res = await fetch("/latest.json");
       const data = await res.json();
 
-      const items = data.reviewables || [];
+      const topics = data.topic_list?.topics || [];
+      countEl.textContent = topics.length;
 
-      // Count (use meta if available)
-      countEl.textContent =
-        data.meta?.total || items.length;
-
-      if (!items.length) {
-        list.innerHTML = "<li>No items in review queue</li>";
+      if (!topics.length) {
+        list.innerHTML = "<li>No posts found</li>";
         return;
       }
 
-      items.forEach((r) => {
+      topics.forEach((t) => {
+        const isReviewed = t.tags?.includes("reviewed");
+
         list.innerHTML += `
           <li>
-            <a href="/review">
-              ${r.type.replace("Reviewable", "")} (${r.status})
+            <a href="/t/${t.slug}/${t.id}">
+              ${t.title}
             </a>
+
+            <span class="review-status ${
+              isReviewed ? "reviewed" : "unreviewed"
+            }">
+              ${isReviewed ? "Reviewed" : "Unreviewed"}
+            </span>
           </li>
         `;
       });
     } catch (e) {
-      console.error("Review fetch failed", e);
+      console.error("Review status fetch failed", e);
     }
   }
 
@@ -130,7 +133,7 @@ export default apiInitializer("0.11", (api) => {
     if (!list || !countEl) return;
 
     try {
-      // TAG BASED (Search API)
+      // TAG BASED
       const tagRes = await fetch("/search.json?q=tags:follow-up");
       const tagData = await tagRes.json();
 
@@ -149,7 +152,6 @@ export default apiInitializer("0.11", (api) => {
       const flagCount =
         reviewData.meta?.total || flagged.length;
 
-      // Total count
       countEl.textContent = tagCount + flagCount;
 
       if (!tagTopics.length && !flagged.length) {
@@ -157,7 +159,6 @@ export default apiInitializer("0.11", (api) => {
         return;
       }
 
-      // Render tag-based
       tagTopics.forEach((t) => {
         list.innerHTML += `
           <li>
@@ -168,7 +169,6 @@ export default apiInitializer("0.11", (api) => {
         `;
       });
 
-      // Render flagged
       flagged.forEach((r) => {
         list.innerHTML += `
           <li>
@@ -178,7 +178,6 @@ export default apiInitializer("0.11", (api) => {
           </li>
         `;
       });
-
     } catch (e) {
       console.error("Follow-up fetch failed", e);
     }
